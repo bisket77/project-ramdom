@@ -244,3 +244,6 @@ docker push bisket77/random-wheel-frontend:v1
 
 ### 🌐 ลิงก์เว็บไซต์ออนไลน์ (Live Demo)
 👉 **เข้าใช้งานวงล้อสุ่ม:** [https://random-core.onrender.com](https://random-core.onrender.com)
+
+
+docker.io/bisket77/random-wheel-frontend:v1

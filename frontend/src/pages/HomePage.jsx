@@ -27,13 +27,22 @@ export default function HomePage() {
   const [isWinnerModalOpen, setIsWinnerModalOpen] = useState(false);
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
 
-  /** refreshHistory: ดึงประวัติล่าสุดจาก backend มาแสดงในแผงด้านข้าง */
+  /** refreshHistory: ดึงประวัติล่าสุดจาก backend หรือ fallback จาก localStorage */
   const refreshHistory = useCallback(async () => {
     try {
       const data = await api.fetchSpinHistory(50);
-      setHistory(data || []);
+      if (Array.isArray(data) && data.length > 0) {
+        setHistory(data);
+        return;
+      }
     } catch (err) {
-      console.error('Fetch history error:', err.message);
+      console.warn('Backend unavailable, loading local history:', err.message);
+    }
+    try {
+      const savedHistory = JSON.parse(localStorage.getItem('lucky_spin_history') || '[]');
+      setHistory(savedHistory);
+    } catch (e) {
+      setHistory([]);
     }
   }, []);
 
@@ -51,10 +60,29 @@ export default function HomePage() {
     }
   }, [result, refreshHistory]);
 
-  /** handleSaveEntries: บันทึกรายการใหม่แบบ bulk replace เข้า backend */
+  /** handleSaveEntries: บันทึกรายการใหม่ทันที และพยายาม sync กับ backend ในพื้นหลัง */
   async function handleSaveEntries(items) {
-    await api.bulkReplacePrizes(items);
-    await loadPrizes();
+    const PALETTE = [
+      '#2563EB', '#0D9488', '#F59E0B', '#7C3AED', '#E11D48', '#059669', '#EA580C', '#4F46E5', '#0284C7', '#DB2777',
+    ];
+    const updated = items.map((it, idx) => ({
+      id: String(idx + 1),
+      label: it.label,
+      weight: it.weight || 1,
+      color: it.color || PALETTE[idx % PALETTE.length],
+      sortOrder: idx,
+      isActive: true,
+    }));
+    setPrizes(updated);
+    try {
+      localStorage.setItem('lucky_spin_prizes', JSON.stringify(updated));
+    } catch (e) {}
+
+    try {
+      await api.bulkReplacePrizes(items);
+    } catch (err) {
+      console.warn('Backend unavailable, saved entries locally');
+    }
   }
 
   /** handleRequestClearHistory: เปิดโมดัลยืนยันล้างข้อมูลแบบทันสมัย */
@@ -62,14 +90,17 @@ export default function HomePage() {
     setIsConfirmClearOpen(true);
   }
 
-  /** handleConfirmedClearHistory: ดำเนินการล้างประวัติจริงหลังกดยืนยันในโมดัล */
+  /** handleConfirmedClearHistory: ดำเนินการล้างประวัติจริง */
   async function handleConfirmedClearHistory() {
     setIsConfirmClearOpen(false);
     try {
       await api.clearSpinHistory();
     } catch (err) {
-      console.error('Clear history error:', err);
+      console.warn('Backend unavailable, cleared history locally');
     } finally {
+      try {
+        localStorage.removeItem('lucky_spin_history');
+      } catch (e) {}
       setHistory([]);
       setMultiResults([]);
       setResult(null);
@@ -82,9 +113,12 @@ export default function HomePage() {
     const updated = prizes.filter((p) => p.label !== winnerLabel);
     setPrizes(updated);
     try {
+      localStorage.setItem('lucky_spin_prizes', JSON.stringify(updated));
+    } catch (e) {}
+    try {
       await api.bulkReplacePrizes(updated.map((p) => ({ label: p.label })));
     } catch (err) {
-      console.error(err);
+      console.warn('Backend unavailable, removed winner locally');
     }
   }
 
@@ -105,26 +139,36 @@ export default function HomePage() {
       setMultiResults([]);
 
       try {
-        const spinPromise = spin(playerName);
+        const firstPrizePromise = spin(playerName);
 
         const additionalPromises = [];
         for (let i = 1; i < spinCount; i++) {
-          additionalPromises.push(api.spinWheel(playerName));
+          additionalPromises.push(
+            api.spinWheel(playerName).catch(() => {
+              const totalWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 1), 0);
+              let r = Math.random() * totalWeight;
+              for (let p of prizes) {
+                r -= (Number(p.weight) || 1);
+                if (r <= 0) return { prize: p };
+              }
+              return { prize: prizes[0] };
+            })
+          );
         }
 
         const additionalResults = await Promise.all(additionalPromises);
-        await spinPromise;
+        const firstWinner = await firstPrizePromise;
 
         const allRes = [
-          result?.label,
-          ...additionalResults.map((r) => r.prize.label),
+          firstWinner?.label || result?.label,
+          ...additionalResults.map((r) => r?.prize?.label),
         ].filter(Boolean);
 
         setMultiResults(allRes);
         await refreshHistory();
         setIsWinnerModalOpen(true);
       } catch (err) {
-        console.error(err);
+        console.error('Multi-spin error:', err);
       } finally {
         setIsMultiSpinning(false);
       }
