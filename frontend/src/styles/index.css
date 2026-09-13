@@ -1,0 +1,170 @@
+/* index.css
+   -----------------------------------------------------------------------
+   General Clinic Light Theme
+   โทนสีขาว สะอาดตา ทันสมัย (White / Light Slate / Royal Blue)
+   ถอดแบบความมินิมอลและสะอาดสะอ้านจากระบบ General Clinic
+   ----------------------------------------------------------------------- */
+
+:root {
+  /* พาเลตสีหลักแบบคลินิก */
+  --color-bg: #F8FAFC;           /* สีพื้นหลังหน้าเว็บ (Light Slate Canvas) */
+  --color-surface: #FFFFFF;      /* พื้นผิวการ์ด/แผงสีขาวบริสุทธิ์ */
+  --color-surface-raised: #F1F5F9;/* สีพื้นกล่องย่อย/ปุ่มรอง */
+  --color-border: #E2E8F0;       /* เส้นขอบสีเทาอ่อน */
+  --color-border-hover: #CBD5E1; /* เส้นขอบเมื่อเมาส์ชี้ */
+  --color-text: #0F172A;          /* สีตัวอักษรหลัก (Dark Slate) คมชัดอ่านง่าย */
+  --color-text-dim: #64748B;      /* สีตัวอักษรรอง/คำอธิบาย (Slate Muted) */
+  --color-primary: #2563EB;       /* สีน้ำเงินคลินิก (Royal Blue) */
+  --color-primary-hover: #1D4ED8; /* สีน้ำเงินเข้มเมื่อ hover */
+  --color-accent: #0284C7;        /* สีฟ้าเสริม */
+  --color-teal: #0D9488;          /* สีเขียวมิ้นต์สุขภาพ */
+  --color-gold: #F59E0B;          /* สีเหลืองอำพัน */
+  --color-danger: #EF4444;        /* สีแดงเตือนภัย/ลบ */
+  --color-danger-hover: #DC2626;
+
+  /* เงา (Shadow Tokens) แบบ Modern Clean */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-wheel: 0 20px 40px -15px rgba(37, 99, 235, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+
+  /* ฟอนต์ */
+  --font-display: 'Plus Jakarta Sans', 'Prompt', 'Kanit', system-ui, sans-serif;
+  --font-body: 'Prompt', 'Kanit', 'Inter', system-ui, sans-serif;
+
+  /* ระยะห่าง */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--color-text);
+}
+
+button {
+  font-family: var(--font-display);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-3);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.35);
+}
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.45);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover {
+  background: var(--color-surface-raised);
+}
+
+input, select, textarea {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

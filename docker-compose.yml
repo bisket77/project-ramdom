@@ -1,0 +1,81 @@
+# docker-compose.yml
+# ------------------------------------------------------------------------------
+# ไฟล์นี้รวม 3 service เข้าด้วยกันสำหรับรันในเครื่อง dev หรือทดสอบก่อนขึ้น cloud:
+#   1. db       -> ฐานข้อมูล PostgreSQL (เก็บ data ผ่าน volume ไม่หายตอน restart)
+#   2. backend  -> Express API ที่เชื่อมกับ db
+#   3. frontend -> React app (build แล้วเสิร์ฟด้วย nginx) ที่เรียก backend
+#
+# วิธีใช้งาน: docker compose up --build
+# ------------------------------------------------------------------------------
+
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: random #random_wheel_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-random_wheel} #POSTGRES_DB
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - db_data:/var/lib/postgresql/data # persist ข้อมูลไว้แม้ container ถูกลบ
+    ports:
+      - '5432:5432' # เปิดไว้เผื่อต้องต่อจาก DB client ภายนอกตอน dev
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: random_wheel_backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DB_HOST: db # ชื่อ service ด้านบน ใช้เป็น hostname ภายใน docker network
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-random_wheel}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+    tty: true # เปิดใช้งาน TTY เพื่อให้ Docker ส่งผ่าน ANSI Color Codes แสดงสีใน Terminal
+    depends_on:
+      db:
+        condition: service_healthy # รอให้ database พร้อมก่อนค่อยเริ่ม backend
+    ports:
+      - '4000:4000'
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # ตอน build image, frontend ต้องรู้ URL ของ backend ที่จะเรียกใช้งานจริง
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+    container_name: random_wheel_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '8080:80'
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: random_wheel_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@bun.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+# admin@bun.com
+# admin 
+
+    ports:
+      - '8088:80' # เข้าใช้งานผ่านเว็บ http://localhost:8088
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+
