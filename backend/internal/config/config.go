@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Port      string
-	DBHost    string
-	DBUser    string
-	DBPassword string
-	DBName    string
-	DBPort    string
-	DBSSLMode string
+	Port        string
+	DatabaseURL string
+	DBHost      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBPort      string
+	DBSSLMode   string
 }
 
 var AppConfig *Config
@@ -51,13 +52,14 @@ func LoadConfig() {
 	}
 
 	AppConfig = &Config{
-		Port:       getEnv("PORT", "4000"),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "postgres"),
-		DBName:     getEnv("DB_NAME", "random_wheel"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
+		Port:        getEnv("PORT", "4000"),
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", "postgres"),
+		DBName:      getEnv("DB_NAME", "random_wheel"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		DBSSLMode:   getEnv("DB_SSLMODE", "disable"),
 	}
 
 	log.Printf("Configuration Loaded Successfully (Host: %s, Port: %s, DBName: %s, ServerPort: %s)",

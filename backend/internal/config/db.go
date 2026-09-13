@@ -14,14 +14,19 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Bangkok",
-		AppConfig.DBHost,
-		AppConfig.DBUser,
-		AppConfig.DBPassword,
-		AppConfig.DBName,
-		AppConfig.DBPort,
-		AppConfig.DBSSLMode,
-	)
+	var dsn string
+	if AppConfig.DatabaseURL != "" {
+		dsn = AppConfig.DatabaseURL
+	} else {
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=Asia/Bangkok",
+			AppConfig.DBHost,
+			AppConfig.DBUser,
+			AppConfig.DBPassword,
+			AppConfig.DBName,
+			AppConfig.DBPort,
+			AppConfig.DBSSLMode,
+		)
+	}
 
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		PrepareStmt: true,
