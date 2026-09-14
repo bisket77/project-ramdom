@@ -16,8 +16,11 @@ RUN npm install
 COPY . .
 
 # VITE_API_URL ต้องกำหนดตอน build (Vite inject ค่าตอน build time ไม่ใช่ runtime)
-ARG VITE_API_URL=http://localhost:4000/api
+ARG VITE_API_URL=https://project-random-backend.onrender.com/api  
 ENV VITE_API_URL=$VITE_API_URL
+
+# จะต้องเอาไปใส่ตัว fontend เพื่อไปยิ่งของ api 
+
 
 RUN npm run build
 

@@ -72,7 +72,7 @@ services:
 # admin 
 
     ports:
-      - '8088:80' # เข้าใช้งานผ่านเว็บ http://localhost:8088
+      - '8089:80' # เข้าใช้งานผ่านเว็บ http://localhost:8088
     depends_on:
       - db
 
