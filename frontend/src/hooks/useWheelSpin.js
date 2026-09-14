@@ -22,106 +22,58 @@ export function useWheelSpin() {
   const [error, setError] = useState(null);
   const rotationRef = useRef(0); // เก็บค่าองศาปัจจุบันไว้ใช้คำนวณรอบถัดไป (ไม่ให้หมุนย้อนกลับ)
 
-  /** loadPrizes: โหลดรายการรางวัลจาก backend มาแสดงบนวงล้อ หรือ fallback จาก localStorage */
+  /** loadPrizes: โหลดรายการรางวัลจาก backend มาแสดงบนวงล้อ */
   const loadPrizes = useCallback(async () => {
     try {
       setError(null);
       const data = await fetchPrizes();
       if (data && data.length > 0) {
         setPrizes(data);
-        try {
-          localStorage.setItem('lucky_spin_prizes', JSON.stringify(data));
-        } catch (e) {}
-        return;
       }
     } catch (err) {
-      console.warn('Backend not ready, checking local storage:', err.message);
+      console.warn('Backend not ready, using local prizes:', err.message);
+      // ถ้าติดต่อ backend ไม่ได้ ให้คงข้อมูลตัวอย่างไว้ วงล้อจะได้ไม่หายเป็นหน้าจอดำ
+      setPrizes((prev) =>
+        prev.length > 0
+          ? prev
+          : [
+              { id: '1', label: 'Ali', color: '#2563EB', weight: 1, sortOrder: 0, isActive: true },
+              { id: '2', label: 'Beatriz', color: '#0D9488', weight: 1, sortOrder: 1, isActive: true },
+              { id: '3', label: 'Charles', color: '#F59E0B', weight: 1, sortOrder: 2, isActive: true },
+              { id: '4', label: 'Diya', color: '#7C3AED', weight: 1, sortOrder: 3, isActive: true },
+              { id: '5', label: 'Eric', color: '#E11D48', weight: 1, sortOrder: 4, isActive: true },
+              { id: '6', label: 'Fatima', color: '#059669', weight: 1, sortOrder: 5, isActive: true },
+              { id: '7', label: 'Gabriel', color: '#EA580C', weight: 1, sortOrder: 6, isActive: true },
+              { id: '8', label: 'Hanna', color: '#4F46E5', weight: 1, sortOrder: 7, isActive: true },
+            ]
+      );
     }
-
-    // ถ้าติดต่อ backend ไม่ได้ ให้ดึงจาก localStorage
-    try {
-      const saved = localStorage.getItem('lucky_spin_prizes');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPrizes(parsed);
-          return;
-        }
-      }
-    } catch (e) {}
-
-    // ข้อมูลเริ่มต้น 8 ชื่อ
-    setPrizes([
-      { id: '1', label: 'Ali', color: '#2563EB', weight: 1, sortOrder: 0, isActive: true },
-      { id: '2', label: 'Beatriz', color: '#0D9488', weight: 1, sortOrder: 1, isActive: true },
-      { id: '3', label: 'Charles', color: '#F59E0B', weight: 1, sortOrder: 2, isActive: true },
-      { id: '4', label: 'Diya', color: '#7C3AED', weight: 1, sortOrder: 3, isActive: true },
-      { id: '5', label: 'Eric', color: '#E11D48', weight: 1, sortOrder: 4, isActive: true },
-      { id: '6', label: 'Fatima', color: '#059669', weight: 1, sortOrder: 5, isActive: true },
-      { id: '7', label: 'Gabriel', color: '#EA580C', weight: 1, sortOrder: 6, isActive: true },
-      { id: '8', label: 'Hanna', color: '#4F46E5', weight: 1, sortOrder: 7, isActive: true },
-    ]);
   }, []);
 
   /**
    * spin: เริ่มกระบวนการหมุน
-   * 1. เรียก backend เพื่อสุ่มผล (ถ้าติดต่อไม่ได้ ให้สุ่มใน client อัตโนมัติ)
-   * 2. คำนวณองศาปลายทางให้ตรงกับช่องที่ชนะ พร้อมบวกรอบหมุนเพิ่ม
-   * 3. หมุนวงล้อไปยังองศานั้น และแสดงผลลัพธ์
+   * 1. เรียก backend เพื่อสุ่มผล (ได้ winningIndex กลับมา)
+   * 2. คำนวณองศาปลายทางให้ตรงกับช่องที่ชนะ พร้อมบวกรอบหมุนเพิ่มเพื่อความสวยงาม
+   * 3. ตั้งค่า state เพื่อให้ CSS transition หมุนวงล้อไปยังองศานั้น
    */
   const spin = useCallback(
     async (playerName) => {
-      if (isSpinning || prizes.length === 0) return null;
+      if (isSpinning || prizes.length === 0) return;
 
       setIsSpinning(true);
       setResult(null);
       setError(null);
 
       try {
-        let prize, winningIndex, totalSegments;
-
-        try {
-          const data = await spinWheel(playerName);
-          if (data && data.prize) {
-            prize = data.prize;
-            winningIndex = data.winningIndex;
-            totalSegments = data.totalSegments || prizes.length;
-          } else {
-            throw new Error('Invalid backend response');
-          }
-        } catch (apiErr) {
-          console.warn('Backend unavailable, spinning client-side:', apiErr.message);
-          // Fallback: Randomize locally based on weights
-          totalSegments = prizes.length;
-          const totalWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 1), 0);
-          let randomVal = Math.random() * totalWeight;
-          let chosenIndex = 0;
-          for (let i = 0; i < prizes.length; i++) {
-            randomVal -= (Number(prizes[i].weight) || 1);
-            if (randomVal <= 0) {
-              chosenIndex = i;
-              break;
-            }
-          }
-          winningIndex = chosenIndex;
-          prize = prizes[chosenIndex];
-
-          // Save to local history fallback
-          try {
-            const currentHistory = JSON.parse(localStorage.getItem('lucky_spin_history') || '[]');
-            const newEntry = {
-              id: Date.now(),
-              Prize: prize,
-              playerName: playerName || 'Guest',
-              createdAt: new Date().toISOString(),
-            };
-            currentHistory.unshift(newEntry);
-            localStorage.setItem('lucky_spin_history', JSON.stringify(currentHistory.slice(0, 100)));
-          } catch (e) {}
-        }
+        const data = await spinWheel(playerName);
+        const { prize, winningIndex, totalSegments } = data;
 
         const segmentAngle = 360 / totalSegments;
+        // มุมกึ่งกลางของช่องที่ชนะ (นับจากจุดเริ่มต้นของวงล้อ)
         const targetSegmentCenter = winningIndex * segmentAngle + segmentAngle / 2;
+
+        // ลูกศรชี้ตายตัวที่ด้านบน (0 องศา) ดังนั้นต้องหมุนวงล้อ "ย้อนกลับ" ให้ช่องที่ชนะ
+        // มาอยู่ตรงลูกศรพอดี แล้วบวกรอบเต็มเพิ่มเข้าไปให้ดูมีจังหวะลุ้น
         const currentFullTurns = Math.floor(rotationRef.current / 360);
         const nextRotation =
           (currentFullTurns + EXTRA_FULL_SPINS) * 360 + (360 - targetSegmentCenter);
@@ -129,20 +81,17 @@ export function useWheelSpin() {
         rotationRef.current = nextRotation;
         setRotation(nextRotation);
 
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            setResult(prize);
-            setIsSpinning(false);
-            resolve(prize);
-          }, SPIN_DURATION_MS);
-        });
+        // รอให้แอนิเมชันหมุนจบก่อนค่อยแสดงผลลัพธ์ (sync กับ CSS transition duration)
+        setTimeout(() => {
+          setResult(prize);
+          setIsSpinning(false);
+        }, SPIN_DURATION_MS);
       } catch (err) {
-        console.error('Spin error:', err);
+        setError(err.message);
         setIsSpinning(false);
-        return null;
       }
     },
-    [isSpinning, prizes]
+    [isSpinning, prizes.length]
   );
 
   return {
@@ -151,7 +100,6 @@ export function useWheelSpin() {
     rotation,
     isSpinning,
     result,
-    setResult,
     error,
     loadPrizes,
     spin,
