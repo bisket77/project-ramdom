@@ -1,0 +1,48 @@
+
+----------------- DB ----------------------
+image   		= postgres:16-alpine 
+service name 		= db-random-core
+Port   			= 5432
+
+environment:
+POSTGRES_DB		= random wheel
+POSTGRES_USER		= postgres
+POSTGRES_PASSWORD	= postgres
+
+----------------- backend --------------------
+image			= bisket77/project_random-backend
+service name 		= backend-random-core
+Port   			= 4000			=	
+db_data   		= /var/lib/postgresql/data
+
+environment:   (url supabase excamole = ค้นหา) 
+	[รูปแบบ]		= postgresql://[user[:password]@][host][:port][/dbname]
+DATABASE_URL 		= postgresql://postgres:postgres@db-random-core:5432/random_wheel
+
+
+
+[ส่วนประกอบล่างนี้ไม่ต้องใส่ก็ได้ไว้ดูเฉยๆ]
+DB_HOST			= db-random-core
+DB_NAME			= random_wheel
+DB_PASSWORD		= postgres
+DB_USER			= postgres
+
+------> จะได้ port  <node-ip>:30328 → :4000   ->>> 30328 
+---------------- frontend ------------
+image   		= postgres:16-alpine 
+service name 		= db-random-core
+Port   			= 80         [ดูที่ src -> Dockerfile -> EXPOSE ]
+
+environment:
+VITE_API_URL		=https://192.168.162.130:30328
+BACKEND_URL		=https://192.168.162.130:30328
+
+-------------วิธีเปิด -----------------
+192.168.162.130:32235 Bun
+192.168.162.130:31423 Kanin
+192.168.162.130:31423 Mak
+
+docker bulid -t  bisket77/test_back:v1 .
+docker push bisket77/random-wheel-frontend:v1
+
+

@@ -12,17 +12,19 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:16-alpine
-    container_name: random #random_wheel_db
+    image: postgres:16-alpine 
+    container_name: random #random_wheel_db 
     restart: unless-stopped
+    # //----------------------------------
     environment:
-      POSTGRES_DB: ${DB_NAME:-random_wheel} #POSTGRES_DB
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-random_wheel} #POSTGRES_DB  
+      POSTGRES_USER: ${DB_USER:-postgres}                
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}  
     volumes:
-      - db_data:/var/lib/postgresql/data # persist ข้อมูลไว้แม้ container ถูกลบ
+      - db_data:    /var/lib/postgresql/data # persist ข้อมูลไว้แม้ container ถูกลบ //----------------------------------
     ports:
       - '5432:5432' # เปิดไว้เผื่อต้องต่อจาก DB client ภายนอกตอน dev
+    # //----------------------------------
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres}']
       interval: 5s
@@ -34,6 +36,7 @@ services:
       context: ./backend
     container_name: random_wheel_backend
     restart: unless-stopped
+    # ---------------------------
     environment:
       PORT: 4000
       DB_HOST: db # ชื่อ service ด้านบน ใช้เป็น hostname ภายใน docker network
